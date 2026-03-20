@@ -41,8 +41,6 @@ function serveStatic(req, res) {
         }
         res.writeHead(200, {
             'Content-Type': contentType,
-            'Cross-Origin-Embedder-Policy': 'require-corp',
-            'Cross-Origin-Opener-Policy': 'same-origin',
             'Access-Control-Allow-Origin': '*'
         });
         res.end(data);
