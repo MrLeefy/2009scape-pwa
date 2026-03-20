@@ -353,7 +353,10 @@
         }
 
         function wsBridgeGetOrigin() {
-            // PWA is hosted on GitHub Pages, proxy runs on Render
+            // When running locally, use same origin; in production (GitHub Pages), use Render proxy
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                return window.location.origin;
+            }
             return "https://play-2009scape.onrender.com";
         }
 
