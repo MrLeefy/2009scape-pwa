@@ -51,10 +51,17 @@ function serveStatic(req, res) {
 
 // WebSocket upgrade handler — bridges WS to game server TCP
 function handleUpgrade(req, socket, head) {
-    if (req.url !== '/ws-proxy') {
+    // Accept /ws-proxy or /ws-proxy?host=X&port=Y
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    if (url.pathname !== '/ws-proxy') {
         socket.destroy();
         return;
     }
+
+    // Allow client to specify target host/port  
+    const targetHost = url.searchParams.get('host') || GAME_HOST;
+    const targetPort = parseInt(url.searchParams.get('port') || GAME_PORT);
+    console.log(`WS proxy connecting to ${targetHost}:${targetPort}`);
 
     // WebSocket handshake
     const key = req.headers['sec-websocket-key'];
@@ -73,8 +80,8 @@ function handleUpgrade(req, socket, head) {
     );
 
     // Connect to game server
-    const gameSocket = net.createConnection({ host: GAME_HOST, port: GAME_PORT }, () => {
-        console.log(`Proxying to ${GAME_HOST}:${GAME_PORT}`);
+    const gameSocket = net.createConnection({ host: targetHost, port: targetPort }, () => {
+        console.log(`Proxying to ${targetHost}:${targetPort}`);
     });
 
     // WS frame parser (simplified for binary frames)
