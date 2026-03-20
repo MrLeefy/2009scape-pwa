@@ -353,7 +353,8 @@
         }
 
         function wsBridgeGetOrigin() {
-            return window.location.origin;
+            // PWA is hosted on GitHub Pages, proxy runs on Render
+            return "https://play-2009scape.onrender.com";
         }
 
         // Launch the game via CheerpJ
