@@ -19,8 +19,14 @@ const MIME_TYPES = {
     '.webmanifest': 'application/manifest+json'
 };
 
-// Serve static files from public/
+// Health check endpoint
 function serveStatic(req, res) {
+    if (req.url === '/health') {
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.end('ok');
+        return;
+    }
+
     let filePath = req.url === '/' ? '/index.html' : req.url;
     filePath = path.join(__dirname, 'public', filePath);
 
@@ -183,4 +189,17 @@ server.listen(PORT, () => {
     console.log(`🎮 2009Scape PWA server running on port ${PORT}`);
     console.log(`   Static files: ./public/`);
     console.log(`   WS proxy: /ws-proxy -> ${GAME_HOST}:${GAME_PORT}`);
+
+    // Self-ping keepalive — prevents Render free tier from spinning down
+    const RENDER_URL = process.env.RENDER_EXTERNAL_URL;
+    if (RENDER_URL) {
+        setInterval(() => {
+            http.get(`${RENDER_URL}/health`, (res) => {
+                console.log(`Keepalive ping: ${res.statusCode}`);
+            }).on('error', (e) => {
+                console.log('Keepalive ping failed:', e.message);
+            });
+        }, 13 * 60 * 1000); // Every 13 minutes (Render spins down after 15 min)
+        console.log(`   Keepalive: pinging ${RENDER_URL}/health every 13 min`);
+    }
 });
