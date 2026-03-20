@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>2009Scape</title>
+    <meta name="description" content="2009Scape - Classic RuneScape in your browser">
+    <meta name="theme-color" content="#1a1a2e">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-512.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #0a0a14;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #0a0a14 0%, #1a1a2e 50%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease-out;
+        }
+
+        #loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #c9aa58, #ffd700, #c9aa58);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+        }
+
+        .loading-subtitle {
+            font-size: 0.9rem;
+            color: #8888aa;
+            margin-bottom: 2rem;
+        }
+
+        .progress-container {
+            width: 300px;
+            height: 6px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #c9aa58, #ffd700);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        .loading-status {
+            font-size: 0.85rem;
+            color: #6a6a8a;
+        }
+
+        #game-container {
+            width: 765px;
+            height: 503px;
+            background: #000;
+            border: 1px solid rgba(201, 170, 88, 0.3);
+            border-radius: 4px;
+            box-shadow: 0 0 40px rgba(201, 170, 88, 0.08);
+            position: relative;
+            overflow: hidden;
+        }
+
+        @media (max-width: 800px) {
+            #game-container {
+                width: 100vw;
+                height: calc(100vw * 503 / 765);
+                border: none;
+                border-radius: 0;
+            }
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .toolbar button {
+            background: rgba(201, 170, 88, 0.1);
+            border: 1px solid rgba(201, 170, 88, 0.2);
+            color: #c9aa58;
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .toolbar button:hover {
+            background: rgba(201, 170, 88, 0.2);
+            border-color: rgba(201, 170, 88, 0.4);
+        }
+
+        .install-banner {
+            display: none;
+            position: fixed;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 1px solid rgba(201, 170, 88, 0.3);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            z-index: 500;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .install-banner.show { display: flex; }
+
+        .install-banner button {
+            background: linear-gradient(135deg, #c9aa58, #ffd700);
+            border: none;
+            color: #1a1a2e;
+            padding: 0.5rem 1.2rem;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="loading-title">2009Scape</div>
+        <div class="loading-subtitle">Loading Java Runtime...</div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <div class="loading-status" id="loading-status">Initializing CheerpJ...</div>
+    </div>
+
+    <!-- Game Container -->
+    <div id="game-container"></div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <button onclick="toggleFullscreen()">⛶ Fullscreen</button>
+        <button onclick="installPWA()" id="install-btn" style="display:none">📲 Install App</button>
+    </div>
+
+    <!-- PWA Install Banner -->
+    <div class="install-banner" id="install-banner">
+        <span>Install 2009Scape as an app?</span>
+        <button onclick="installPWA()">Install</button>
+        <button onclick="dismissInstall()" style="background:none;border:1px solid rgba(201,170,88,0.3);color:#c9aa58;">Later</button>
+    </div>
+
+    <!-- CheerpJ 3.0 -->
+    <script src="https://cjrtnc.leaningtech.com/3.0/cj3loader.js"></script>
+
+    <script>
+        // PWA install prompt
+        let deferredPrompt;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('install-btn').style.display = '';
+            setTimeout(() => {
+                document.getElementById('install-banner').classList.add('show');
+            }, 5000);
+        });
+
+        async function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const result = await deferredPrompt.userChoice;
+                console.log('Install:', result.outcome);
+                deferredPrompt = null;
+                document.getElementById('install-banner').classList.remove('show');
+                document.getElementById('install-btn').style.display = 'none';
+            }
+        }
+
+        function dismissInstall() {
+            document.getElementById('install-banner').classList.remove('show');
+        }
+
+        function toggleFullscreen() {
+            const container = document.getElementById('game-container');
+            if (!document.fullscreenElement) {
+                container.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(err => {
+                console.log('SW registration failed:', err);
+            });
+        }
+
+        // Update loading progress
+        function updateProgress(percent, status) {
+            document.getElementById('progress-bar').style.width = percent + '%';
+            document.getElementById('loading-status').textContent = status;
+        }
+
+        // Launch the game via CheerpJ
+        async function launchGame() {
+            try {
+                updateProgress(10, 'Loading CheerpJ runtime...');
+
+                await cheerpjInit({
+                    clipboardMode: "permission",
+                    status: "none"
+                });
+
+                updateProgress(40, 'Loading game JAR...');
+
+                cheerpjCreateDisplay(765, 503, document.getElementById('game-container'));
+
+                updateProgress(60, 'Starting 2009Scape...');
+
+                // Run the client main class
+                // The JAR needs to be served from the same origin or CORS-enabled
+                await cheerpjRunJar("/app/client.jar", "1", "live", "english", "game0");
+
+                updateProgress(100, 'Game started!');
+
+                // Hide loading screen
+                setTimeout(() => {
+                    document.getElementById('loading-screen').classList.add('hidden');
+                }, 500);
+
+            } catch (error) {
+                updateProgress(0, 'Error: ' + error.message);
+                console.error('CheerpJ error:', error);
+            }
+        }
+
+        // Start when page loads
+        window.addEventListener('DOMContentLoaded', launchGame);
+    </script>
+</body>
+</html>

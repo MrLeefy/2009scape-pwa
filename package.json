@@ -1,0 +1,12 @@
+{
+    "name": "2009scape-pwa",
+    "version": "1.0.0",
+    "description": "2009Scape browser client - play RuneScape in your browser",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js"
+    },
+    "engines": {
+        "node": ">=18"
+    }
+}
