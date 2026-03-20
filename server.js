@@ -183,8 +183,13 @@ function handleUpgrade(req, socket, head) {
     });
 }
 
+const https = require('https');
+
 const server = http.createServer(serveStatic);
-server.on('upgrade', handleUpgrade);
+server.on('upgrade', (req, socket, head) => {
+    console.log(`WS upgrade request: ${req.url} from ${req.headers.origin || 'unknown'}`);
+    handleUpgrade(req, socket, head);
+});
 
 server.listen(PORT, () => {
     console.log(`🎮 2009Scape PWA server running on port ${PORT}`);
@@ -195,7 +200,7 @@ server.listen(PORT, () => {
     const RENDER_URL = process.env.RENDER_EXTERNAL_URL;
     if (RENDER_URL) {
         setInterval(() => {
-            http.get(`${RENDER_URL}/health`, (res) => {
+            https.get(`${RENDER_URL}/health`, (res) => {
                 console.log(`Keepalive ping: ${res.statusCode}`);
             }).on('error', (e) => {
                 console.log('Keepalive ping failed:', e.message);
