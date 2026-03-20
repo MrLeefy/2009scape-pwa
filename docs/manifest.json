@@ -2,7 +2,8 @@
     "name": "2009Scape",
     "short_name": "2009Scape",
     "description": "Classic RuneScape in your browser",
-    "start_url": "/",
+    "start_url": "/2009scape-pwa/",
+    "scope": "/2009scape-pwa/",
     "display": "standalone",
     "orientation": "landscape",
     "background_color": "#0a0a14",
@@ -11,15 +12,16 @@
         {
             "src": "icon-192.png",
             "sizes": "192x192",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any"
         },
         {
             "src": "icon-512.png",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any maskable"
         }
     ],
     "categories": ["games", "entertainment"],
-    "screenshots": [],
     "prefer_related_applications": false
 }

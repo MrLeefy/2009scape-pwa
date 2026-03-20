@@ -68,6 +68,7 @@ function handleUpgrade(req, socket, head) {
         'Upgrade: websocket\r\n' +
         'Connection: Upgrade\r\n' +
         `Sec-WebSocket-Accept: ${accept}\r\n` +
+        'Access-Control-Allow-Origin: *\r\n' +
         '\r\n'
     );
 
