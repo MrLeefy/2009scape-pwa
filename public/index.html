@@ -240,6 +240,122 @@
             document.getElementById('loading-status').textContent = status;
         }
 
+        // === WebSocket Bridge for game networking ===
+        const wsConnections = {};
+        let wsNextHandle = 1;
+
+        function wsBridgeConnect(url) {
+            const handle = wsNextHandle++;
+            const conn = {
+                ws: null,
+                buffer: [],      // received data chunks
+                isOpen: false,
+                isClosed: false,
+            };
+            wsConnections[handle] = conn;
+
+            try {
+                conn.ws = new WebSocket(url);
+                conn.ws.binaryType = 'arraybuffer';
+
+                conn.ws.onopen = () => {
+                    console.log('[WS Bridge] Connected, handle:', handle);
+                    conn.isOpen = true;
+                };
+
+                conn.ws.onmessage = (event) => {
+                    conn.buffer.push(new Uint8Array(event.data));
+                };
+
+                conn.ws.onclose = () => {
+                    console.log('[WS Bridge] Closed, handle:', handle);
+                    conn.isOpen = false;
+                    conn.isClosed = true;
+                };
+
+                conn.ws.onerror = (e) => {
+                    console.error('[WS Bridge] Error, handle:', handle, e);
+                    conn.isOpen = false;
+                    conn.isClosed = true;
+                };
+            } catch (e) {
+                console.error('[WS Bridge] Failed to create WebSocket:', e);
+                return -1;
+            }
+
+            return handle;
+        }
+
+        function wsBridgeRead(handle, maxBytes) {
+            const conn = wsConnections[handle];
+            if (!conn || conn.buffer.length === 0) return null;
+
+            // Gather data from buffer chunks
+            let totalAvailable = 0;
+            for (const chunk of conn.buffer) totalAvailable += chunk.length;
+            if (totalAvailable === 0) return null;
+
+            const toRead = Math.min(totalAvailable, maxBytes);
+            const result = new Uint8Array(toRead);
+            let offset = 0;
+
+            while (offset < toRead && conn.buffer.length > 0) {
+                const chunk = conn.buffer[0];
+                const needed = toRead - offset;
+                if (chunk.length <= needed) {
+                    result.set(chunk, offset);
+                    offset += chunk.length;
+                    conn.buffer.shift();
+                } else {
+                    result.set(chunk.subarray(0, needed), offset);
+                    conn.buffer[0] = chunk.subarray(needed);
+                    offset += needed;
+                }
+            }
+
+            // Convert to Java byte array (signed)
+            const javaBytes = new Int8Array(result.buffer, result.byteOffset, result.byteLength);
+            return Array.from(javaBytes);
+        }
+
+        function wsBridgeWrite(handle, data, jOffset, length) {
+            const conn = wsConnections[handle];
+            if (!conn || !conn.isOpen) return;
+
+            // data is a Java byte array (signed), extract the slice
+            const slice = new Uint8Array(length);
+            for (let i = 0; i < length; i++) {
+                slice[i] = data[jOffset + i] & 0xFF;
+            }
+            conn.ws.send(slice.buffer);
+        }
+
+        function wsBridgeClose(handle) {
+            const conn = wsConnections[handle];
+            if (conn && conn.ws) {
+                try { conn.ws.close(); } catch(e) {}
+                conn.isOpen = false;
+                conn.isClosed = true;
+            }
+        }
+
+        function wsBridgeIsOpen(handle) {
+            const conn = wsConnections[handle];
+            return conn ? conn.isOpen : false;
+        }
+
+        function wsBridgeAvailable(handle) {
+            const conn = wsConnections[handle];
+            if (!conn) return 0;
+            let total = 0;
+            for (const chunk of conn.buffer) total += chunk.length;
+            return total;
+        }
+
+        function wsBridgeGetOrigin() {
+            return window.location.origin;
+        }
+
         // Launch the game via CheerpJ
         async function launchGame() {
             try {
@@ -247,7 +363,31 @@
 
                 await cheerpjInit({
                     clipboardMode: "permission",
-                    status: "none"
+                    status: "none",
+                    natives: {
+                        // WebSocketBridge native methods
+                        async Java_rt4_WebSocketBridge_wsConnect(lib, url) {
+                            return wsBridgeConnect(url);
+                        },
+                        async Java_rt4_WebSocketBridge_wsRead(lib, handle, maxBytes) {
+                            return wsBridgeRead(handle, maxBytes);
+                        },
+                        async Java_rt4_WebSocketBridge_wsWrite(lib, handle, data, offset, length) {
+                            wsBridgeWrite(handle, data, offset, length);
+                        },
+                        async Java_rt4_WebSocketBridge_wsClose(lib, handle) {
+                            wsBridgeClose(handle);
+                        },
+                        async Java_rt4_WebSocketBridge_wsIsOpen(lib, handle) {
+                            return wsBridgeIsOpen(handle);
+                        },
+                        async Java_rt4_WebSocketBridge_wsAvailable(lib, handle) {
+                            return wsBridgeAvailable(handle);
+                        },
+                        async Java_rt4_WebSocketBridge_getPageOrigin(lib) {
+                            return wsBridgeGetOrigin();
+                        }
+                    }
                 });
 
                 updateProgress(40, 'Loading game JAR...');
@@ -257,7 +397,6 @@
                 updateProgress(60, 'Starting 2009Scape...');
 
                 // Run the client main class
-                // The JAR needs to be served from the same origin or CORS-enabled
                 await cheerpjRunJar("/app/client.jar", "1", "live", "english", "game0");
 
                 updateProgress(100, 'Game started!');
