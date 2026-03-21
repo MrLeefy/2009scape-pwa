@@ -402,8 +402,11 @@
 
                 updateProgress(60, 'Starting 2009Scape...');
 
-                // Run the client main class
-                await cheerpjRunJar("/app/2009scape-pwa/client.jar", "1", "live", "english", "game0");
+                // Use correct JAR path based on hosting location
+                const isGitHubPages = window.location.hostname.includes('github.io');
+                const jarPath = isGitHubPages ? "/app/2009scape-pwa/client.jar" : "/app/client.jar";
+                console.log("[PWA] Loading JAR from:", jarPath);
+                await cheerpjRunJar(jarPath, "1", "live", "english", "game0");
 
                 updateProgress(100, 'Game started!');
 
