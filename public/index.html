@@ -176,6 +176,26 @@
     <!-- Game Container -->
     <div id="game-container"></div>
 
+    <!-- On-Screen Debug Console -->
+    <div id="debug-console" style="
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 250px;
+        background: rgba(0, 0, 0, 0.85);
+        border-top: 2px solid #c9aa58;
+        overflow-y: auto;
+        padding: 10px;
+        z-index: 9999;
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        color: #ccc;
+        font-family: monospace;
+        font-size: 11px;
+    "></div>
+
     <!-- Toolbar -->
     <div class="toolbar">
         <button onclick="toggleFullscreen()">⛶ Fullscreen</button>
@@ -193,6 +213,49 @@
     <script src="https://cjrtnc.leaningtech.com/3.0/cj3loader.js"></script>
 
     <script>
+        // --- On-Screen Debug Console ---
+        (function overrideConsole() {
+            const logContainer = document.getElementById('debug-console');
+            if (!logContainer) return;
+            
+            const originalLog = console.log;
+            const originalWarn = console.warn;
+            const originalError = console.error;
+
+            function appendLog(msg, type) {
+                const colors = { log: '#ccc', warn: '#fa0', error: '#f44' };
+                const line = document.createElement('div');
+                line.style.color = colors[type] || '#ccc';
+                line.style.marginBottom = '2px';
+                line.style.whiteSpace = 'pre-wrap';
+                line.style.wordBreak = 'break-all';
+                line.textContent = typeof msg === 'object' ? JSON.stringify(msg) : msg;
+                logContainer.appendChild(line);
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+
+            console.log = function(...args) {
+                originalLog.apply(console, args);
+                appendLog(args.join(' '), 'log');
+            };
+            console.warn = function(...args) {
+                originalWarn.apply(console, args);
+                appendLog(args.join(' '), 'warn');
+            };
+            console.error = function(...args) {
+                originalError.apply(console, args);
+                appendLog(args.join(' '), 'error');
+            };
+            
+            window.addEventListener('error', function(e) {
+                appendLog('Uncaught Error: ' + e.message, 'error');
+            });
+            window.addEventListener('unhandledrejection', function(e) {
+                appendLog('Unhandled Promise Rejection: ' + e.reason, 'error');
+            });
+        })();
+        // -------------------------------
+
         // PWA install prompt
         let deferredPrompt;
 
