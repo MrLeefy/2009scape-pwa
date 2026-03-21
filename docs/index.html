@@ -431,15 +431,20 @@
                     natives: {
                         // WebSocketBridge native methods
                         async Java_rt4_WebSocketBridge_wsConnect(lib, url) {
+                            console.log("[NATIVE] wsConnect: " + url);
                             return wsBridgeConnect(url);
                         },
                         async Java_rt4_WebSocketBridge_wsRead(lib, handle, maxBytes) {
-                            return wsBridgeRead(handle, maxBytes);
+                            const res = wsBridgeRead(handle, maxBytes);
+                            if (res != null) console.log("[NATIVE] wsRead (" + handle + ") -> " + res.length + " bytes");
+                            return res;
                         },
                         async Java_rt4_WebSocketBridge_wsWrite(lib, handle, data, offset, length) {
+                            console.log("[NATIVE] wsWrite (" + handle + "): " + length + " bytes");
                             wsBridgeWrite(handle, data, offset, length);
                         },
                         async Java_rt4_WebSocketBridge_wsClose(lib, handle) {
+                            console.log("[NATIVE] wsClose (" + handle + ")");
                             wsBridgeClose(handle);
                         },
                         async Java_rt4_WebSocketBridge_wsIsOpen(lib, handle) {
