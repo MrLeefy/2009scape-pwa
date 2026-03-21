@@ -9,7 +9,8 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icon-192.png">
     <link rel="apple-touch-icon" href="icon-512.png">
-    <!-- CheerpJ 3.0 handles its own isolation, no COI service worker needed -->
+    <!-- COI service worker provides SharedArrayBuffer support needed by CheerpJ -->
+    <script src="coi-serviceworker.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -459,8 +460,8 @@
 
                 updateProgress(60, 'Starting 2009Scape...');
 
-                // The CheerpJ /app/ mount point maps to the directory containing index.html.
-                const jarPath = "/app/client.jar";
+                // The CheerpJ /app/ mount point maps to the root domain.
+                const jarPath = "/app/2009scape-pwa/client.jar";
                 console.log("[PWA] Loading JAR from:", jarPath);
                 await cheerpjRunJar(jarPath, "1", "live", "english", "game0");
 
