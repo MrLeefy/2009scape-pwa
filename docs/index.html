@@ -370,6 +370,7 @@
                 await cheerpjInit({
                     clipboardMode: "permission",
                     status: "none",
+                    javaProperties: ["cheerpj.browser=true"],
                     natives: {
                         // WebSocketBridge native methods
                         async Java_rt4_WebSocketBridge_wsConnect(lib, url) {
