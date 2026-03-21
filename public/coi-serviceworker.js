@@ -20,6 +20,12 @@ if (typeof window === 'undefined') {
             return;
         }
 
+        // Skip header injection for CheerpJ's own resources (they handle their own CORS)
+        const url = new URL(r.url);
+        if (url.hostname.endsWith('leaningtech.com') || url.hostname.endsWith('cheerpj.com')) {
+            return;
+        }
+
         const request = (coepCredentialless && r.mode === "no-cors")
             ? new Request(r, { credentials: "omit" })
             : r;

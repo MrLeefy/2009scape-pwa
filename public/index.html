@@ -9,7 +9,8 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icon-192.png">
     <link rel="apple-touch-icon" href="icon-512.png">
-    <!-- CheerpJ 3.0 handles cross-origin isolation internally; no coi-serviceworker needed -->
+    <!-- COI service worker provides SharedArrayBuffer support needed by CheerpJ -->
+    <script src="coi-serviceworker.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
